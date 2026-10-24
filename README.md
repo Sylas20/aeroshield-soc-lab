@@ -40,7 +40,6 @@ I signed in to the workstation as a standard user with the wrong password until 
 - Built the Windows Server 2022 domain controller, DNS and OU structure
 - Joined and configured the Windows 10 engineering workstation
 - Applied password, lockout, screen-lock and audit policy through Group Policy
-- Designed the network segmentation and firewall rule set
 - Wrote the security control plan and validation checklist
 
 ---
