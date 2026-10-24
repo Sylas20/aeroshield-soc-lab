@@ -1,4 +1,11 @@
+[README.md](https://github.com/user-attachments/files/33895669/README.md)
 # AeroShield SOC Lab: Active Directory Build, Hardening and Detection
+
+**At a glance**
+- **Built:** Windows Server 2022 domain controller (AD, DNS, Group Policy) and a domain-joined Windows 10 workstation
+- **Hardened:** password and lockout policy, least privilege, named admin accounts, Advanced Audit Policy by GPO
+- **Detected:** ran a password-guessing test and confirmed Wazuh received the failed logons (4625) and lockout (4740)
+- **Tools:** Active Directory · Group Policy · PowerShell · Wazuh SIEM · Windows event logs
 
 A four-day team build of a security operations lab for a fictional aerospace and satellite company, completed in the Rapid Ascent Cybersecurity Program (City University of Seattle). I was the Security Engineer and built the Windows side: the domain controller, the engineering workstation, and the policies that harden and monitor them. I finished by running a password-guessing test and confirming the SIEM caught it.
 
@@ -187,11 +194,8 @@ Wazuh search used for the test: `data.win.system.eventID:4625 or data.win.system
 |---|---|---|
 | OpenSSH "installed" but the service didn't exist | Capability name typed with `----` instead of `~~~~`; no error, nothing installed | Re-ran with the correct name and checked the install state |
 | Domain name wouldn't resolve on the workstation | Workstation still used the range's public DNS, which doesn't know the internal domain | Pointed DNS only at the DC; outside lookups go through its forwarders |
-| New user account was disabled | First password failed the complexity policy | Reset the password and enabled the account |
-| `Move-ADObject` couldn't find the workstation | Used `Get-ADUser` on a computer object | Switched to `Get-ADComputer` |
-| Wazuh hostname resolved to two IPs | Typo created a second record pointing at the Yamcs server | Removed the bad record by its IP and re-verified (below) |
+| Wazuh hostname resolved to two IPs | A second DNS record pointed at the Yamcs server | Removed the bad record by its IP and re-verified (below) |
 | Audit categories that had been on showed "No Auditing" | Once a GPO defines *any* Advanced Audit setting, Windows drops all the defaults | Added every needed category to the GPO and compared before and after (below) |
-| Workstation GPO named `AWS-WS-Baseline` | Typo in the GPO name, caught while reviewing screenshots | Renamed it; the OU link followed automatically because links use the GPO's ID, not its name |
 
 **Duplicate DNS record before the fix:** about half the connections meant for Wazuh would have gone to the Yamcs server.
 
@@ -201,7 +205,7 @@ Wazuh search used for the test: `data.win.system.eventID:4625 or data.win.system
 
 ![Audit defaults dropped](images/23_trouble_audit-defaults-dropped.png)
 
-**Lesson:** "completed successfully" isn't proof. In the last three problems every command succeeded. Only checking the result caught the mistake.
+**Lesson:** "completed successfully" isn't proof. In three of these four problems, every command reported success. Only checking the result caught the mistake.
 
 ---
 
@@ -241,14 +245,11 @@ Mapped to the team risk register (CYB IDs).
 
 ## If this were a production environment
 
-Recommendations beyond what the lab called for:
+Changes I'd make based on what I saw in this build:
 
-- **Built-in Administrator:** it can't be deleted, so rename it, disable it (or give it a long random password kept in a vault), and alert on any use of it. Admins use named accounts instead. *(Lab note: screenshots were taken as the built-in Administrator; named admin accounts were created but not yet enforced.)*
-- **LAPS** (Local Administrator Password Solution) so each machine's local admin account has a unique, rotating password
+- **Built-in Administrator:** it can't be deleted, so rename it, disable it, and alert on any use of it. Admins use named accounts instead. *(Lab note: screenshots were taken as the built-in Administrator; named admin accounts were created but not yet enforced.)*
+- **LAPS** (Local Administrator Password Solution): the range used the same local admin account name (shield) on every machine; LAPS gives each machine's local admin a unique, rotating password
 - **A second domain controller,** so one failure doesn't stop everyone from signing in
-- **No web browsing or internet access on the DC**
-- **Licensed Windows** instead of evaluation copies, and a migration plan off Windows 10, which is past end of support
-- **Offline backups** of the DC with a tested restore
 - **Screen lock at 900 seconds** to meet CIS Level 1
 
 ## Next steps with more time
